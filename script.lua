@@ -5041,8 +5041,9 @@ end, "Mute/unmute a player.")
     Created by cuh4#7366 [cuhHub Developer]
 
     This addon uses cuhFramework, see above.
-]]
 
+    Open-Source @ https://github.com/Roozz1/MuteAddon
+]]
 --------------
 
 ----------------------------------------------------------------
