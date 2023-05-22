@@ -28,7 +28,7 @@ messageLibrary = {
             table.insert(messages, message)
 
             -- fire thy event
-            cuhFramework.utilities.delay.create(0.01, function() -- onchatmessage is called before the message appears in chat
+            cuhFramework.utilities.delay.create(0.001, function() -- onchatmessage is called before the message appears in chat
                 messageLibrary.events.onMessageSend:fire(message)
             end)
         end)
