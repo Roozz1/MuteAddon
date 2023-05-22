@@ -39,6 +39,10 @@ miscellaneousLibrary = {
 
     ---@param player player
     unnamedClientOrServerOrDisconnecting = function(player, dontCheckDisconnecting)
+        if not player then
+            return true
+        end
+
         return (player.properties.peer_id == 0 and config.isDedicatedServer or player.properties.steam_id == 0) or (player.properties.disconnecting and not dontCheckDisconnecting)
     end,
 
