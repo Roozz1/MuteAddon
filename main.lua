@@ -66,6 +66,7 @@ end
 debugLibrary.initialize()
 easyPopupsLibrary.initialize()
 eventsLibrary.initialize()
+messageLibrary.initialize()
 
 ------------- Storages
 globalStorage = storageLibrary.new("Global Storage")
