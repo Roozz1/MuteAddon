@@ -10,7 +10,7 @@ local messages = {}
 messageLibrary = {
     initialize = function()
         -- log messages
-        cuhFramework.callbacks.onChatMessage:connect(function(peer_id, _, message)
+        cuhFramework.callbacks.onChatMessage:connect(function(peer_id, _, content)
             -- get thy player
             local player = cuhFramework.players.getPlayerByPeerId(peer_id)
 
@@ -24,7 +24,13 @@ messageLibrary = {
             end
 
             -- log thy message
-            table.insert(messages, messageLibrary.messages.construct(player, message))
+            local message = messageLibrary.messages.construct(player, content)
+            table.insert(messages, message)
+
+            -- fire thy event
+            cuhFramework.utilities.delay.create(0.01, function() -- onchatmessage is called before the message appears in chat
+                messageLibrary.events.onMessageSend:fire(message)
+            end)
         end)
     end,
 
@@ -70,6 +76,9 @@ messageLibrary = {
                 -- go to next
                 ::continue::
             end
+
+            -- fire the event
+            messageLibrary.events.onMessageDelete:fire(message)
         end,
 
         ---@param message message
@@ -89,6 +98,9 @@ messageLibrary = {
                 -- send the message
                 cuhFramework.chat.send_message(v.properties.author.properties.name, v.properties.content, player)
             end
+
+            -- fire the event
+            messageLibrary.events.onMessageEdit:fire(message)
         end,
 
         getAll = function()
@@ -103,6 +115,6 @@ messageLibrary = {
     events = {
         onMessageSend = eventsLibrary.new("onMessageSend"), -- first param = message
         onMessageEdit = eventsLibrary.new("onMessageEdit"), -- first param = message
-       onMessageDelete = eventsLibrary.new("onMessageDelete") -- first param = message
+        onMessageDelete = eventsLibrary.new("onMessageDelete") -- first param = message
     }
 }
