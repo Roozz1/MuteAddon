@@ -25,6 +25,16 @@
 -------------------------------------------------
 -------------------------- Miscellaneous
 -------------------------------------------------
+------------- Message
+---@class message
+---@field properties messageProperties
+---@field delete function<self, player|nil>
+---@field edit function<self, player|nil, string>
+
+---@class messageProperties
+---@field author player
+---@field content string
+
 ------------- Color
 ---@class colorRGB
 ---@field r number
