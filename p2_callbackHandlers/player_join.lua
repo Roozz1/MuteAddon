@@ -15,6 +15,9 @@ cuhFramework.callbacks.onPlayerJoin:connect(function(steam_id, name, peer_id, ad
         return
     end
 
+    -- Credit
+    chatAnnounce(("This server uses the %s created by %s.\nIf you would like to download the addon for yourself, join the Discord: %s."):format(config.info.addon_name, config.info.creator, config.info.discord), player)
+
     -- Add
     table.insert(players_unfiltered, player)
 end)

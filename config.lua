@@ -11,6 +11,7 @@ config = {
 
     info = {
         addon_name = "Mute Addon",
+        creator = "cuh4#7366",
         discord = "discord.gg/zTQxaZjwDr",
         help_message = "Someone being annoying in chat? With this addon, you can mute them with one simple command which you can see below."
     }
