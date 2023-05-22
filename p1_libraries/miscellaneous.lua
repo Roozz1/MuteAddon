@@ -56,8 +56,6 @@ miscellaneousLibrary = {
             end
         end
 
-        df.print("player count - "..count)
-
         return count
     end,
 
