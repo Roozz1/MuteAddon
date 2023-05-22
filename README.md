@@ -1,7 +1,7 @@
 > # ***Mute Addon***
 *An addon that allows you to mute/unmute players. Fully open-source.*
 
-⚠**This is an addon for Stormworks: Build and Rescue.**
+**This is an addon for the game Stormworks: Build and Rescue.**
 
 > ### **Features**
 - *Hides message sent by a player you mute*
