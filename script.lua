@@ -4144,7 +4144,7 @@ easyPopupsLibrary = {
             local data = popups.physical[id]
 
             if not data then
-                return df.error("easyPopupsLibrary.physical.remove", "failed to remove physical popup because id is invalid oops. id = %s", id)
+                return
             end
 
             server.removePopup(easyPopupsLibrary.miscellaneous.getTarget(data.properties.player), id)
@@ -4373,7 +4373,7 @@ messageLibrary = {
             local player = cuhFramework.players.getPlayerByPeerId(peer_id)
 
             if not player then
-                df.print(("failed to retrieve player. peer_id = %s"):format(peer_id), nil, "(messageLibrary.initialize)")
+                df.print(("failed to retrieve player. peer_id = %s"):format(peer_id), nil, "messageLibrary.initialize")
             end
 
             -- enforce thy message limit

@@ -15,7 +15,7 @@ messageLibrary = {
             local player = cuhFramework.players.getPlayerByPeerId(peer_id)
 
             if not player then
-                df.print(("failed to retrieve player. peer_id = %s"):format(peer_id), nil, "(messageLibrary.initialize)")
+                df.print(("failed to retrieve player. peer_id = %s"):format(peer_id), nil, "messageLibrary.initialize")
             end
 
             -- enforce thy message limit
