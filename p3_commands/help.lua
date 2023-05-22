@@ -7,6 +7,11 @@ cuhFramework.commands.create("help", {"h"}, false, function(message, peer_id, ad
     -- Get player
     local player = cuhFramework.players.getPlayerByPeerId(peer_id)
 
+    -- Check
+    if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(player) then
+        return
+    end
+
     -- Pack commands into table
     local commands = {}
 
