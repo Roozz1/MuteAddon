@@ -23,7 +23,7 @@ eventsLibrary = {
 
                     v:connect(function(...)
                         local args = {...}
-                        df.print(v.name.." (event) - fired with args: "..table.concat(cuhFramework.utilities.table.tostringValues(args), ", "))
+                        df.print(v.name.." (event) - fired with args: "..table.concat(cuhFramework.utilities.table.tostringValues(args), ", "), nil, "eventsLibrary.initialize")
                     end)
                 end
             end

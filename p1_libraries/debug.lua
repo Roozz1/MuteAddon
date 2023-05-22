@@ -14,7 +14,7 @@ debugLibrary = {
 
         -- alive loop
         cuhFramework.utilities.loop.create(1, function()
-            df.print("alive")
+            df.print("i am alive!", nil, "debugLibrary.initialize")
         end)
 
         -- check
@@ -27,10 +27,11 @@ debugLibrary = {
         --     if i == "onTick" then
         --         goto continue
         --     end
-        --     df.printTbl(v)
+
+        --     df.printTbl(v, nil, "debugLibrary.initialize")
 
         --     v:connect(function(...)
-        --         df.print("cuhframework callback - "..i.." | called with args: "..cuhFramework.utilities.table.tostringValues({...}))
+        --         df.print("cuhframework callback - "..i.." | called with args: "..cuhFramework.utilities.table.tostringValues({...}), nil, "debugLibrary.initialize")
         --     end)
 
         --     ::continue::
@@ -41,17 +42,13 @@ debugLibrary = {
         return config.debugEnabled
     end,
 
-    error = function(source, msg, ...)
-        df.print(("(%s)"):format(source).." | ERR: "..msg:format(...))
-    end,
-
-    print = function(toPrint, disableSep)
+    print = function(toPrint, disableSep, source)
         if not debugLibrary.debugEnabled() then
             return
         end
 
         toPrint = tostring(toPrint)
-        toPrint = "DEBUG "..config.info.server_name.." - "..debug_addon_name.." - "..toPrint..cuhFramework.utilities.miscellaneous.switchbox("\n-----------------", "", disableSep)
+        toPrint = "DEBUG | "..debug_addon_name.." - "..toPrint..cuhFramework.utilities.miscellaneous.switchbox("\n-----------------", "", disableSep)..(" (%s)"):format(source or "No source specified.")
 
         if config.debugShouldLog then
             debug.log(toPrint)
@@ -60,7 +57,7 @@ debugLibrary = {
         end
     end,
 
-    printTbl = function(tbl, indent)
+    printTbl = function(tbl, indent, source)
         if not indent then
             indent = 0
         end
@@ -69,10 +66,10 @@ debugLibrary = {
             formatting = string.rep("  ", indent)..i..": "
 
             if type(v) == "table" then
-                df.print(formatting, true)
+                df.print(formatting, true, source)
                 df.printTbl(v, indent + 1)
             else
-                df.print(formatting..tostring(v), true)
+                df.print(formatting..tostring(v), true, source)
             end
         end
     end
