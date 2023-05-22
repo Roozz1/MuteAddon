@@ -10,6 +10,8 @@ config = {
     debugEnabled = true,
     debugShouldLog = true,
 
+    deleteInsteadOfEdit = property.checkbox("Delete message (check) or edit message to '[MUTED]' (don't check) if player is muted.", false),
+
     info = {
         addon_name = "Mute Addon",
         discord = "discord.gg/zTQxaZjwDr",
@@ -47,6 +49,16 @@ config = {
 -------------------------------------------------
 -------------------------- Miscellaneous
 -------------------------------------------------
+------------- Message
+---@class message
+---@field properties messageProperties
+---@field delete function<self, player|nil>
+---@field edit function<self, string, player|nil>
+
+---@class messageProperties
+---@field author player
+---@field content string
+
 ------------- Color
 ---@class colorRGB
 ---@field r number
@@ -4342,6 +4354,130 @@ matrix.add = function(matrix1, matrix2)
 end
 
 -----------------
+-- [Library | Folder: p1_libraries] message.lua
+-----------------
+---------------------------------------
+------------- Message
+---------------------------------------
+
+------------- Variables
+---@type table<integer, message>
+local messages = {}
+
+------------- Library
+messageLibrary = {
+    initialize = function()
+        -- log messages
+        cuhFramework.callbacks.onChatMessage:connect(function(peer_id, _, content)
+            -- get thy player
+            local player = cuhFramework.players.getPlayerByPeerId(peer_id)
+
+            if not player then
+                df.print(("failed to retrieve player. peer_id = %s"):format(peer_id), nil, "(messageLibrary.initialize)")
+            end
+
+            -- enforce thy message limit
+            if #messages >= 50 then
+                table.remove(messages, 1)
+            end
+
+            -- log thy message
+            local message = messageLibrary.messages.construct(player, content)
+            table.insert(messages, message)
+
+            -- fire thy event
+            cuhFramework.utilities.delay.create(0.001, function() -- onchatmessage is called before the message appears in chat
+                messageLibrary.events.onMessageSend:fire(message)
+            end)
+        end)
+    end,
+
+    messages = {
+        ---@param player player
+        ---@return message
+        construct = function(player, content)
+            return {
+                properties = {
+                    author = player,
+                    content = content
+                },
+
+                ---@param self message
+                delete = function(self, _player)
+                    return messageLibrary.messages.delete(self, player)
+                end,
+
+                ---@param self message
+                edit = function(self, newContent, _player)
+                    return messageLibrary.messages.edit(self, newContent, player)
+                end,
+            }
+        end,
+
+        ---@param message message
+        ---@param player player|nil
+        delete = function(message, player)
+            -- clear chat
+            cuhFramework.chat.clear(player)
+
+            -- send all logged messages apart from the message that needs to be deleted
+            for i, v in pairs(messages) do
+                -- remove the message from log if its the message that needs to be deleted
+                if v == message then
+                    table.remove(messages, i)
+                    goto continue
+                end
+
+                -- send the message
+                cuhFramework.chat.send_message(v.properties.author.properties.name, v.properties.content, player)
+
+                -- go to next
+                ::continue::
+            end
+
+            -- fire the event
+            messageLibrary.events.onMessageDelete:fire(message)
+        end,
+
+        ---@param message message
+        ---@param player player|nil
+        edit = function(message, newContent, player)
+            -- clear chat
+            cuhFramework.chat.clear(player)
+
+            -- send all logged messages, including the now edited target message
+            for i, v in pairs(messages) do
+                -- remove the message from log if its the message that needs to be deleted
+                if v == message then
+                    v.properties.content = newContent
+                    messages[i] = v
+                end
+
+                -- send the message
+                cuhFramework.chat.send_message(v.properties.author.properties.name, v.properties.content, player)
+            end
+
+            -- fire the event
+            messageLibrary.events.onMessageEdit:fire(message)
+        end,
+
+        getAll = function()
+            return messages
+        end,
+
+        getMostRecent = function()
+            return messages[#messages]
+        end
+    },
+
+    events = {
+        onMessageSend = eventsLibrary.new("onMessageSend"), -- first param = message
+        onMessageEdit = eventsLibrary.new("onMessageEdit"), -- first param = message
+        onMessageDelete = eventsLibrary.new("onMessageDelete") -- first param = message
+    }
+}
+
+-----------------
 -- [Library | Folder: p1_libraries] miscellaneous.lua
 -----------------
 ---------------------------------------
@@ -4385,6 +4521,10 @@ miscellaneousLibrary = {
 
     ---@param player player
     unnamedClientOrServerOrDisconnecting = function(player, dontCheckDisconnecting)
+        if not player then
+            return true
+        end
+
         return (player.properties.peer_id == 0 and config.isDedicatedServer or player.properties.steam_id == 0) or (player.properties.disconnecting and not dontCheckDisconnecting)
     end,
 
@@ -4744,6 +4884,11 @@ cuhFramework.commands.create("help", {"h"}, false, function(message, peer_id, ad
     -- Get player
     local player = cuhFramework.players.getPlayerByPeerId(peer_id)
 
+    -- Check
+    if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(player) then
+        return
+    end
+
     -- Pack commands into table
     local commands = {}
 
@@ -4772,6 +4917,113 @@ cuhFramework.commands.create("help", {"h"}, false, function(message, peer_id, ad
 
     chatAnnounce("// Help\n"..config.info.help_message.."\n\n// Commands:\n"..table.concat(commands, "\n"), player)
 end, "Shows all commands along with help.")
+
+-----------------
+-- [Library | Folder: p3_commands] mute.lua
+-----------------
+---------------------------------------
+------------- Command - Mutes/unmutes a player
+---------------------------------------
+
+------------- Mute Handler
+local muted = {}
+local random = {"#", "!", "?"}
+
+---@param message message
+messageLibrary.events.onMessageSend:connect(function(message)
+    for i, v in pairs(muted) do
+        -- quick check
+        if not v[message.properties.author.properties.peer_id] then -- the person who sent this message isnt muted by v, so go to next mute data thing
+            goto continue
+        end
+
+        -- get thy player
+        local player = cuhFramework.players.getPlayerByPeerId(i)
+
+        if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(player) then -- player probably left
+            goto continue
+        end
+
+        -- edit/delete message
+        if config.deleteInsteadOfEdit then
+            message:delete(player)
+        else
+            -- cool new message styling thing
+            local new = ""
+
+            for i1 = 1, cuhFramework.utilities.number.clamp(#message.properties.content, 1, #message.properties.content) do
+                local letter = message.properties.content:sub(i1, i1)
+                local to_add = " "
+
+                if letter ~= " " then
+                    to_add = cuhFramework.utilities.table.getRandomValue(random)
+                end
+
+                new = new..to_add
+            end
+
+            -- edit message
+            message:edit(new.." [MUTED]", player)
+        end
+
+        -- continue
+        ::continue::
+    end
+end)
+
+cuhFramework.callbacks.onPlayerLeave:connect(function(_, _, peer_id)
+    -- remove mute data
+    muted[peer_id] = nil
+end)
+
+------------- ?mute
+cuhFramework.commands.create("mute", {"m"}, false, function(message, peer_id, admin, auth, command, ...)
+    -- Get variables
+    local player = cuhFramework.players.getPlayerByPeerId(peer_id)
+    local args = {...}
+
+    -- Check
+    if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(player) then
+        return
+    end
+
+    -- Make sure this player is setup
+    if not muted[peer_id] then
+        muted[peer_id] = {}
+    end
+
+    -- Main
+    if args[1] then
+        -- get target player
+        local targetPlayer = cuhFramework.players.getPlayerByNameWithAllowedPartialName(args[1], false)
+
+        -- check if valid
+        if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(targetPlayer) or targetPlayer == player then
+            return announceLibrary.status.failure("This player doesn't exist (or you attempted to mute yourself). Did you type their name correctly?", player)
+        end
+
+        -- check if player is already muted
+        local mutedData = muted[peer_id]
+
+        if not mutedData[targetPlayer.properties.peer_id] then
+            -- mute
+            mutedData[targetPlayer.properties.peer_id] = targetPlayer
+
+            -- and announce
+            announceLibrary.status.success("You have muted "..targetPlayer.properties.name..".", player)
+            announceLibrary.status.warning(player.properties.name.." muted you.", targetPlayer)
+        else
+            -- unmute
+            mutedData[targetPlayer.properties.peer_id] = nil
+
+            -- announce
+            announceLibrary.status.success("You have unmuted "..targetPlayer.properties.name..".", player)
+            announceLibrary.status.warning(player.properties.name.." unmuted you.", targetPlayer)
+        end
+    else
+        return announceLibrary.status.failure("Please specify the player you would like to mute/unmute.\nThe name can be partial, as if you were searching for something on Google.\nExample: '?mute "..player.properties.name:sub(1, 3).."'", player)
+    end
+end, "Mute/unmute a player.")
 
 -----------------
 -- [Main File] main.lua
@@ -4844,6 +5096,7 @@ end
 debugLibrary.initialize()
 easyPopupsLibrary.initialize()
 eventsLibrary.initialize()
+messageLibrary.initialize()
 
 ------------- Storages
 globalStorage = storageLibrary.new("Global Storage")

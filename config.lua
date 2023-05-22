@@ -7,7 +7,7 @@ config = {
     debugEnabled = true,
     debugShouldLog = true,
 
-    editMessageInsteadOfRemove = property.checkbox("Delete message (check) or edit message to '[MUTED]' (don't check) if player is muted.", false),
+    deleteInsteadOfEdit = property.checkbox("Delete message (check) or edit message to '[MUTED]' (don't check) if player is muted.", false),
 
     info = {
         addon_name = "Mute Addon",

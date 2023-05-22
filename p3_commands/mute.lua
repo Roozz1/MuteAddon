@@ -4,22 +4,53 @@
 
 ------------- Mute Handler
 local muted = {}
+local random = {"#", "!", "?"}
 
 ---@param message message
 messageLibrary.events.onMessageSend:connect(function(message)
     for i, v in pairs(muted) do
-        if v[message.properties.author.properties.peer_id] then -- the person who sent this message is muted by v
-            local player = cuhFramework.players.getPlayerByPeerId(i)
-
-            if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(player) then -- player probably left
-                goto continue
-            end
-
-            message:delete(player)
+        -- quick check
+        if not v[message.properties.author.properties.peer_id] then -- the person who sent this message isnt muted by v, so go to next mute data thing
+            goto continue
         end
 
+        -- get thy player
+        local player = cuhFramework.players.getPlayerByPeerId(i)
+
+        if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(player) then -- player probably left
+            goto continue
+        end
+
+        -- edit/delete message
+        if config.deleteInsteadOfEdit then
+            message:delete(player)
+        else
+            -- cool new message styling thing
+            local new = ""
+
+            for i1 = 1, cuhFramework.utilities.number.clamp(#message.properties.content, 1, #message.properties.content) do
+                local letter = message.properties.content:sub(i1, i1)
+                local to_add = " "
+
+                if letter ~= " " then
+                    to_add = cuhFramework.utilities.table.getRandomValue(random)
+                end
+
+                new = new..to_add
+            end
+
+            -- edit message
+            message:edit(new.." [MUTED]", player)
+        end
+
+        -- continue
         ::continue::
     end
+end)
+
+cuhFramework.callbacks.onPlayerLeave:connect(function(_, _, peer_id)
+    -- remove mute data
+    muted[peer_id] = nil
 end)
 
 ------------- ?mute
@@ -44,8 +75,8 @@ cuhFramework.commands.create("mute", {"m"}, false, function(message, peer_id, ad
         local targetPlayer = cuhFramework.players.getPlayerByNameWithAllowedPartialName(args[1], false)
 
         -- check if valid
-        if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(targetPlayer) then
-            return announceLibrary.status.failure("This player doesn't exist. Did you type their name correctly?", player)
+        if miscellaneousLibrary.unnamedClientOrServerOrDisconnecting(targetPlayer) or targetPlayer == player then
+            return announceLibrary.status.failure("This player doesn't exist (or you attempted to mute yourself). Did you type their name correctly?", player)
         end
 
         -- check if player is already muted
