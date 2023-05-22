@@ -29,7 +29,7 @@
 ---@class message
 ---@field properties messageProperties
 ---@field delete function<self, player|nil>
----@field edit function<self, player|nil, string>
+---@field edit function<self, string, player|nil>
 
 ---@class messageProperties
 ---@field author player
